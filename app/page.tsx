@@ -6,6 +6,7 @@ import { NavigationInfoPanel } from "@/components/navigation/NavigationInfoPanel
 import { TurnByTurnOverlay } from "@/components/navigation/TurnByTurnOverlay";
 import { ModeIndicator } from "@/components/ui/ModeIndicator";
 import { ARHudOverlay } from "@/components/ar/ARHudOverlay";
+import { CampusTwinViewer } from "@/components/three/CampusTwinViewer";
 import { useNavigationToasts } from "@/hooks/useNavigationToasts";
 
 export default function Home() {
@@ -20,6 +21,7 @@ export default function Home() {
         <ModeIndicator />
         <TurnByTurnOverlay />
         <NavigationInfoPanel />
+        <CampusTwinViewer />
       </main>
     </div>
   );

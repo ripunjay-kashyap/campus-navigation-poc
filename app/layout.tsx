@@ -16,8 +16,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AR Campus Navigation",
-  description: "AR/VR campus navigation POC — four-mode Mapbox-native architecture",
+  title: "Sathyabama Campus Navigation · 3D Wayfinding",
+  description: "Interactive 3D campus navigation and spatial wayfinding for Sathyabama Institute of Science and Technology",
 };
 
 export default function RootLayout({

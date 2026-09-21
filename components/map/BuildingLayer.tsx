@@ -25,7 +25,7 @@ export function BuildingLayer() {
         filter={["==", "extrude", "true"]}
         paint={{
           "fill-extrusion-color": isAR
-            ? "#ac8aff"   // secondary neon purple — holographic AR tint
+            ? "#06b6d4"   // secondary neon purple — holographic AR tint
             : [           // subtle dark blue for turn-by-turn
                 "interpolate", ["linear"], ["get", "height"],
                 0,   "#1a1a2e",

@@ -19,7 +19,7 @@ export function useNavigationToasts() {
 
     // AR mode entered
     if (viewMode === "ar-simulation" && prevMode !== "ar-simulation") {
-      toast.info("✦ AR Simulation — look around to explore");
+      toast.info("✦ AR View — look around to explore");
     }
 
     previousModeRef.current = viewMode;

@@ -41,7 +41,7 @@ export function RouteLayer() {
             type="line"
             layout={{ "line-join": "round", "line-cap": "round" }}
             paint={{
-              "line-color": "#85adff",
+              "line-color": "#38bdf8",
               "line-width": isTurnByTurn ? 18 : 10,
               "line-opacity": isTurnByTurn ? 0.35 : 0.25,
               "line-blur": isTurnByTurn ? 6 : 4,
@@ -53,7 +53,7 @@ export function RouteLayer() {
             type="line"
             layout={{ "line-join": "round", "line-cap": "round" }}
             paint={{
-              "line-color": isTurnByTurn ? "#6e9fff" : "#85adff",
+              "line-color": isTurnByTurn ? "#0284c7" : "#38bdf8",
               "line-width": isTurnByTurn ? 7 : 5,
               "line-opacity": 0.95,
             }}
@@ -69,7 +69,7 @@ export function RouteLayer() {
             id="ar-path-base"
             type="fill-extrusion"
             paint={{
-              "fill-extrusion-color": "#5516be",
+              "fill-extrusion-color": "#0891b2",
               "fill-extrusion-height": 0.05,
               "fill-extrusion-base": 0,
               "fill-extrusion-opacity": 0.5,
@@ -81,7 +81,7 @@ export function RouteLayer() {
             id="ar-path-extrusion"
             type="fill-extrusion"
             paint={{
-              "fill-extrusion-color": "#ac8aff",
+              "fill-extrusion-color": "#06b6d4",
               "fill-extrusion-height": 0.3,
               "fill-extrusion-base": 0.05,
               "fill-extrusion-opacity": 0.75,
@@ -109,7 +109,7 @@ export function RouteLayer() {
             type="line"
             layout={{ "line-join": "round", "line-cap": "round" }}
             paint={{
-              "line-color": "#ac8aff",
+              "line-color": "#06b6d4",
               "line-width": 14,
               "line-blur": 10,
               "line-opacity": 0.45,

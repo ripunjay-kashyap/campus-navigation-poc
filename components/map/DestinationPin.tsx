@@ -7,9 +7,9 @@ import type { CampusLocation } from "@/types";
 import { useNavigationStore } from "@/store/navigationStore";
 
 // Design system secondary color for all map destination markers
-const MARKER_COLOR = "#ac8aff";
-const MARKER_GLOW  = "rgba(172, 138, 255, 0.35)";
-const MARKER_GLOW_STRONG = "rgba(172, 138, 255, 0.6)";
+const MARKER_COLOR = "#06b6d4";
+const MARKER_GLOW  = "rgba(6, 182, 212, 0.35)";
+const MARKER_GLOW_STRONG = "rgba(6, 182, 212, 0.6)";
 
 interface DestinationPinProps {
   location: CampusLocation;
@@ -50,16 +50,16 @@ export function DestinationPin({ location, onSelect }: DestinationPinProps) {
       >
         {/* Floating label pill */}
         <div
-          className="mb-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all duration-150"
+          className="mb-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all duration-150"
           style={{
             background: isSelected ? MARKER_COLOR : "rgba(9, 19, 40, 0.88)",
-            color: isSelected ? "#060e20" : "#dee5ff",
-            outline: `1px solid ${isActive ? MARKER_COLOR : "rgba(172,138,255,0.3)"}`,
-            opacity: isActive ? 1 : 0.8,
+            color: isSelected ? "#050811" : "#dee5ff",
+            outline: `1px solid ${isActive ? MARKER_COLOR : "rgba(6, 182, 212,0.3)"}`,
+            opacity: isActive ? 1 : 0.85,
             fontFamily: "var(--font-inter)",
           }}
         >
-          {location.label.split(" ")[0]}
+          {location.label}
         </div>
 
         {/* Dot + pulse ring */}

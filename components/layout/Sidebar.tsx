@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Search, X, ChevronRight } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Search, X, ChevronRight, Box, Compass } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigationStore } from "@/store/navigationStore";
 import { CAMPUS_LOCATIONS, COLLEGE_GATE } from "@/constants/locations";
@@ -11,13 +11,6 @@ import { useSearch } from "@/hooks/useSearch";
 import { LOCATION_ICONS } from "@/constants/locationIcons";
 import type { CampusLocation } from "@/types";
 
-const ICON_COLORS: Record<string, string> = {
-  admin:      "#85adff",
-  library:    "#ac8aff",
-  basketball: "#f59e0b",
-  canteen:    "#9bffce",
-};
-
 const LOCATION_STATUS: Record<string, { isOpen: boolean }> = {
   admin:      { isOpen: true  },
   library:    { isOpen: true  },
@@ -25,7 +18,7 @@ const LOCATION_STATUS: Record<string, { isOpen: boolean }> = {
   canteen:    { isOpen: false },
 };
 
-type Filter = "all" | "nearest" | "open";
+type Filter = "all" | "academic" | "dining" | "athletics" | "admin";
 
 const LOCATION_DISTANCES: Record<string, number> = Object.fromEntries(
   CAMPUS_LOCATIONS.map((l) => [
@@ -38,20 +31,32 @@ export function Sidebar() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const {
-    selectDestination, setHoveredLocation, hoveredLocation,
-    selectedDestination, viewMode, isSidebarOpen, setSidebarOpen
+    selectDestination,
+    setHoveredLocation,
+    hoveredLocation,
+    selectedDestination,
+    viewMode,
+    isSidebarOpen,
+    setSidebarOpen,
+    open3DTwin,
   } = useNavigationStore();
+
   const searchResults = useSearch(query);
   const isSearching = query.length > 0;
+
+  // Default sidebar to open on desktop
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      setSidebarOpen(true);
+    }
+  }, [setSidebarOpen]);
+
   const displayList = useMemo((): readonly CampusLocation[] => {
-    if (filter === "open")
-      return CAMPUS_LOCATIONS.filter((l) => LOCATION_STATUS[l.id]?.isOpen) as CampusLocation[];
-    if (filter === "nearest")
-      return [...CAMPUS_LOCATIONS].sort((a, b) => LOCATION_DISTANCES[a.id] - LOCATION_DISTANCES[b.id]) as CampusLocation[];
-    return CAMPUS_LOCATIONS;
+    if (filter === "all") return CAMPUS_LOCATIONS;
+    return CAMPUS_LOCATIONS.filter((l) => l.category === filter);
   }, [filter]);
 
-  // All hooks above — safe to early-return now
+  // Early return in fullscreen navigation modes
   if (viewMode === "ar-simulation" || viewMode === "turn-by-turn") return null;
 
   const finalList: readonly CampusLocation[] = isSearching ? searchResults : displayList;
@@ -60,6 +65,11 @@ export function Sidebar() {
     setQuery("");
     selectDestination(id);
     if (window.innerWidth < 768) setSidebarOpen(false);
+  }
+
+  function handleOpen3D(e: React.MouseEvent, id: string) {
+    e.stopPropagation();
+    open3DTwin(id);
   }
 
   return (
@@ -78,227 +88,196 @@ export function Sidebar() {
       </AnimatePresence>
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] md:relative md:translate-x-0 ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        className={`fixed inset-y-0 left-0 z-50 w-80 flex flex-col transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] md:relative bg-[#090d16]/95 backdrop-blur-2xl border-r border-white/[0.08] shadow-2xl ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:-ml-80"
         }`}
-        style={{ background: "var(--surface-low)", borderRight: "1px solid rgba(133, 173, 255, 0.05)" }}
       >
-        {/* Header — Luminous brand anchor */}
-        <div className="px-5 pt-8 pb-6 bg-transparent relative overflow-hidden">
-          <div className="absolute -top-10 -left-10 w-32 h-32 rounded-full blur-[60px] opacity-20" style={{ background: "var(--primary)" }} />
-          
+        {/* Desktop Collapse/Expand Toggle */}
+        <button
+          onClick={() => setSidebarOpen(!isSidebarOpen)}
+          className="hidden md:flex absolute top-5 -right-9 w-9 h-9 rounded-r-xl items-center justify-center bg-[#090d16]/95 backdrop-blur-md border-y border-r border-white/10 text-white/60 hover:text-white transition-all shadow-lg cursor-pointer hover:bg-[#121624]"
+          aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          <ChevronRight
+            size={15}
+            className={`transition-transform duration-300 ${
+              isSidebarOpen ? "rotate-180" : "rotate-0"
+            }`}
+          />
+        </button>
+
+        {/* Header */}
+        <div className="px-5 pt-6 pb-5 border-b border-white/[0.06] relative">
           {/* Mobile Close Button */}
           <button
             onClick={() => setSidebarOpen(false)}
-            className="absolute top-6 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 border border-white/10 text-white/40 hover:text-white md:hidden z-20"
+            className="absolute top-5 right-4 w-7 h-7 rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white md:hidden transition-all"
+            aria-label="Close sidebar"
           >
-            <X size={16} />
+            <X size={14} />
           </button>
 
-          <div className="flex flex-col gap-1 relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="relative flex items-center justify-center">
-                <div
-                  className="w-2.5 h-2.5 rounded-full z-10"
-                  style={{ background: "var(--tertiary)", boxShadow: "0 0 15px var(--tertiary)" }}
-                />
-                <div
-                  className="absolute inset-0 w-full h-full rounded-full animate-ping opacity-20"
-                  style={{ background: "var(--tertiary)" }}
-                />
-              </div>
-              <h1
-                className="text-3xl font-black tracking-[0.35em] mr-[-0.35em]"
-                style={{ color: "var(--on-surface)", fontFamily: "var(--font-bricolage)" }}
-              >
-                CNS
-              </h1>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#38bdf8] to-[#0284c7] flex items-center justify-center shadow-md shadow-[#38bdf8]/20">
+              <Compass size={17} className="text-[#050811]" />
             </div>
-            <p
-              className="text-[10px] font-bold tracking-[0.2em] uppercase opacity-40 ml-0.5"
-              style={{ color: "var(--on-surface-muted)", fontFamily: "var(--font-inter)" }}
-            >
-              SATHYABAMA UNIVERSITY
-            </p>
+            <div>
+              <h1 className="text-base font-black text-white tracking-tight leading-none">
+                Sathyabama Campus
+              </h1>
+              <p className="text-[10px] font-medium text-white/40 mt-1">
+                Interactive 3D Wayfinding & Maps
+              </p>
+            </div>
           </div>
-      </div>
-
-      {/* Search */}
-      <div className="px-4 pb-5">
-        <div
-          className="flex items-center gap-3 rounded-[18px] px-4 py-3 transition-all duration-300 group"
-          style={{
-            background: "rgba(25, 37, 64, 0.4)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            border: "1px solid rgba(133, 173, 255, 0.08)",
-            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)",
-          }}
-        >
-          <Search size={15} style={{ color: "var(--on-surface-muted)", opacity: 0.6 }} className="group-focus-within:text-[#85adff] transition-colors" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search campus places…"
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-[#40485d]"
-            style={{ color: "var(--on-surface)", fontFamily: "var(--font-inter)" }}
-          />
-          <AnimatePresence>
-            {query && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.15 }}
-                onClick={() => setQuery("")}
-                style={{ color: "var(--on-surface-muted)" }}
-                className="hover:text-white transition-colors"
-              >
-                <X size={14} />
-              </motion.button>
-            )}
-          </AnimatePresence>
         </div>
-      </div>
 
-      {/* Filter chips */}
-      <AnimatePresence>
+        {/* Search */}
+        <div className="px-4 pt-4 pb-3">
+          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 bg-white/[0.04] border border-white/[0.08] focus-within:border-[#38bdf8]/50 transition-all">
+            <Search size={14} className="text-white/40" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search campus buildings, food, courts…"
+              className="flex-1 bg-transparent text-xs text-white outline-none placeholder:text-white/30"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="text-white/40 hover:text-white transition-colors"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Category Filters */}
         {!isSearching && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            className="px-4 pb-6 flex gap-2.5 overflow-hidden"
-          >
-            {(["all", "nearest", "open"] as Filter[]).map((f) => {
+          <div className="px-4 pb-3 flex gap-1.5 overflow-x-auto scrollbar-hide">
+            {(["all", "academic", "admin", "dining", "athletics"] as Filter[]).map((f) => {
               const isActive = filter === f;
               return (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className="px-4 py-1.5 rounded-full text-[11px] font-bold tracking-tight transition-all duration-200"
-                  style={{
-                    fontFamily: "var(--font-inter)",
-                    background: isActive
-                      ? "linear-gradient(135deg, var(--primary), var(--primary-dim))"
-                      : "rgba(25, 37, 64, 0.4)",
-                    color: isActive ? "#060e20" : "var(--on-surface-muted)",
-                    backdropFilter: isActive ? undefined : "blur(12px)",
-                    border: isActive ? "none" : "1px solid rgba(133, 173, 255, 0.05)",
-                    boxShadow: isActive ? "0 4px 12px rgba(133, 173, 255, 0.3)" : "none",
-                  }}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer border ${
+                    isActive
+                      ? "bg-[#38bdf8] text-[#050811] border-[#38bdf8] shadow-sm shadow-[#38bdf8]/20"
+                      : "bg-white/[0.03] text-white/60 border-white/[0.06] hover:text-white hover:bg-white/[0.06]"
+                  }`}
                 >
                   {f.charAt(0).toUpperCase() + f.slice(1)}
                 </button>
               );
             })}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
-      {/* Section label */}
-      <div className="px-6 pb-3">
-        <span
-          className="text-[10px] uppercase tracking-[0.15em] font-black opacity-40"
-          style={{ color: "var(--on-surface-muted)", fontFamily: "var(--font-inter)" }}
-        >
-          {isSearching ? "Search Results" : "Campus Locations"}
-        </span>
-      </div>
-
-      {/* Location list */}
-      <div className="flex-1 overflow-y-auto px-2 pb-6 space-y-1 scrollbar-hide">
-        <AnimatePresence mode="popLayout">
-          {finalList.map((loc) => {
-            const Icon = LOCATION_ICONS[loc.id];
-            const iconColor = ICON_COLORS[loc.id] ?? loc.color;
-            const status = LOCATION_STATUS[loc.id];
-            const isSelected = selectedDestination === loc.id;
-            const isHovered = hoveredLocation === loc.id;
-            const isActive = isSelected || isHovered;
-            const dist = LOCATION_DISTANCES[loc.id];
-
-            return (
-              <motion.button
-                key={loc.id}
-                layout
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                onClick={() => handleSelect(loc.id)}
-                onMouseEnter={() => setHoveredLocation(loc.id)}
-                onMouseLeave={() => setHoveredLocation(null)}
-                className="relative w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-left transition-all duration-300 group"
-                style={{ background: isActive ? "rgba(133, 173, 255, 0.08)" : "transparent" }}
-              >
-                {isSelected && (
-                  <motion.div
-                    layoutId="active-indicator"
-                    className="absolute left-1 top-4 bottom-4 w-1 rounded-full shadow-[0_0_8px_var(--primary)]"
-                    style={{ background: "var(--primary)" }}
-                  />
-                )}
-                <div
-                  className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 shadow-inner"
-                  style={{ background: iconColor + "15", border: `1px solid ${iconColor}20` }}
-                >
-                  {Icon && <Icon size={18} style={{ color: iconColor, filter: isActive ? `drop-shadow(0 0 8px ${iconColor}60)` : "none" }} />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className="text-sm font-bold tracking-tight leading-snug"
-                    style={{ color: isSelected ? "var(--primary)" : "var(--on-surface)", fontFamily: "var(--font-bricolage)" }}
-                  >
-                    {loc.label}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status?.isOpen ? "animate-pulse" : ""}`}
-                      style={{
-                        background: status?.isOpen ? "var(--tertiary)" : "rgba(163, 170, 196, 0.2)",
-                        boxShadow: status?.isOpen ? "0 0 6px var(--tertiary)" : "none",
-                      }}
-                    />
-                    <p
-                      className="text-[11px] font-medium opacity-70"
-                      style={{ color: "var(--on-surface-muted)", fontFamily: "var(--font-inter)" }}
-                    >
-                      {formatDistance(dist)} <span className="opacity-40">·</span> {status?.isOpen ? "Open Now" : "Closed"}
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight
-                  size={14}
-                  className="flex-shrink-0 transition-all duration-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-2"
-                  style={{ color: "var(--primary)" }}
-                />
-              </motion.button>
-            );
-          })}
-        </AnimatePresence>
-
-        {isSearching && finalList.length === 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 px-4">
-            <p className="text-xs tracking-wide opacity-30" style={{ fontFamily: "var(--font-inter)" }}>
-              No campus coordinates match<br />&quot;{query}&quot;
-            </p>
-          </motion.div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="px-6 py-5 mt-auto relative" style={{ borderTop: "1px solid rgba(133, 173, 255, 0.05)" }}>
-        <div className="flex items-center justify-center gap-2 opacity-30 group hover:opacity-100 transition-opacity">
-          <p
-            className="text-[10px] font-black uppercase tracking-[0.2em]"
-            style={{ color: "var(--on-surface-muted)", fontFamily: "var(--font-inter)" }}
-          >
-            {CAMPUS_LOCATIONS.length} COORDINATES · CNS
-          </p>
+        {/* Section Heading */}
+        <div className="px-5 py-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-white/40">
+          <span>{isSearching ? "Search Results" : "Destinations"}</span>
+          <span>{finalList.length} Locations</span>
         </div>
-      </div>
+
+        {/* Location List */}
+        <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-1.5 scrollbar-hide">
+          <AnimatePresence mode="popLayout">
+            {finalList.map((loc) => {
+              const Icon = LOCATION_ICONS[loc.id];
+              const status = LOCATION_STATUS[loc.id];
+              const isSelected = selectedDestination === loc.id;
+              const isHovered = hoveredLocation === loc.id;
+              const dist = LOCATION_DISTANCES[loc.id];
+
+              return (
+                <motion.div
+                  key={loc.id}
+                  layout
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  onClick={() => handleSelect(loc.id)}
+                  onMouseEnter={() => setHoveredLocation(loc.id)}
+                  onMouseLeave={() => setHoveredLocation(null)}
+                  className={`group relative w-full flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer ${
+                    isSelected
+                      ? "bg-[#38bdf8]/10 border-[#38bdf8]/30 shadow-md shadow-[#38bdf8]/5"
+                      : isHovered
+                      ? "bg-white/[0.04] border-white/10"
+                      : "bg-white/[0.015] border-white/[0.04] hover:border-white/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {/* Icon */}
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border shadow-inner"
+                      style={{
+                        background: loc.color + "15",
+                        borderColor: loc.color + "30",
+                      }}
+                    >
+                      {Icon ? (
+                        <Icon size={18} style={{ color: loc.color }} />
+                      ) : (
+                        <span className="text-base">{loc.icon}</span>
+                      )}
+                    </div>
+
+                    {/* Details */}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-white truncate group-hover:text-[#38bdf8] transition-colors">
+                        {loc.label}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 text-[11px] text-white/50">
+                        <span className="font-mono">{formatDistance(dist)}</span>
+                        <span>·</span>
+                        <span className={status?.isOpen ? "text-[#9bffce]" : "text-white/30"}>
+                          {status?.isOpen ? "Open" : "Closed"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3D Twin Quick Button */}
+                  <div className="flex items-center gap-1 pl-2">
+                    <button
+                      onClick={(e) => handleOpen3D(e, loc.id)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-[#38bdf8]/20 border border-white/10 hover:border-[#38bdf8]/40 text-white/60 hover:text-[#38bdf8] text-[10px] font-bold transition-all cursor-pointer"
+                      title="Inspect 3D Model"
+                    >
+                      <Box size={11} />
+                      <span>3D</span>
+                    </button>
+                    <ChevronRight
+                      size={14}
+                      className="text-white/20 group-hover:text-white/60 group-hover:translate-x-0.5 transition-all"
+                    />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+
+          {isSearching && finalList.length === 0 && (
+            <div className="text-center py-16 px-4">
+              <p className="text-xs text-white/40">
+                No campus locations match &quot;{query}&quot;
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-4 border-t border-white/[0.06] bg-[#07090f]/60">
+          <div className="flex items-center justify-between text-[11px] text-white/50">
+            <span className="font-medium">Sathyabama University</span>
+            <span className="text-[#38bdf8] font-medium">Chennai, TN</span>
+          </div>
+        </div>
       </aside>
     </>
   );
