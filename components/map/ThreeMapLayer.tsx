@@ -118,6 +118,10 @@ export function ThreeMapLayer() {
       },
 
       render(gl, matrix) {
+        // If no 3D elements to draw or 3D modal is open, completely skip Three.js render pass
+        const hasElements = beaconGroupRef.current?.visible || chevronsRef.current.length > 0;
+        if (!hasElements || is3DTwinOpenRef.current) return;
+
         const camera = cameraRef.current;
         const renderer = rendererRef.current;
         const scene = sceneRef.current;
@@ -149,14 +153,18 @@ export function ThreeMapLayer() {
 
         renderer.resetState();
         renderer.render(scene, camera);
+        renderer.resetState();
+
+        // Crucial WebGL2 state restoration: unbind Three.js VAO and buffers so
+        // Mapbox's subsequent layer draw calls don't crash with GL_INVALID_OPERATION
+        if (gl instanceof WebGL2RenderingContext) {
+          gl.bindVertexArray(null);
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
         // Only trigger continuous animation loop when navigation animations are visible
-        // and 3D twin modal is not obscuring the view. This prevents 100% idle GPU usage.
-        if (
-          isNavModeRef.current &&
-          !is3DTwinOpenRef.current &&
-          (beaconGroupRef.current?.visible || chevronsRef.current.length > 0)
-        ) {
+        if (isNavModeRef.current) {
           map.triggerRepaint();
         }
       },
